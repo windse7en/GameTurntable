@@ -27,6 +27,17 @@
     <audio id="turntableSound" src="turntable_sound.mp3" preload="auto"></audio>
 
     <script>
+
+        const canvas = document.getElementById('circleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function setCanvasDimensions() {
+            canvas.width = Math.min(window.innerWidth, window.innerHeight) * 0.7;
+            canvas.height = Math.min(window.innerWidth, window.innerHeight) * 0.7;
+        }
+
+        // Set canvas dimensions on initial page load
+        setCanvasDimensions();
         const gameData = {
             "title": "Music Game",
             "radius": 300,
@@ -36,28 +47,28 @@
                     "name": "PitchGuess",
                     "chance": 20,
                     "color": "1167b1",
-                    "description": "Guess the pitch hit"
+                    "description": "Hit the pitch and guess which one gets hit!"
                 },
                 {
                     "id": 1,
                     "name": "Claps",
                     "chance": 20,
                     "color": "187bcd",
-                    "description": "Let's clap"
+                    "description": "Clap different patterns and try to minic it."
                 },
                 {
                     "id": 2,
                     "name": "SingAlong",
                     "chance": 30,
                     "color": "2a9df4",
-                    "description": "sing along with the melody"
+                    "description": "sing along with the melody!"
                 },
                 {
                     "id": 3,
                     "name": "HigherLower",
                     "chance": 30,
                     "color": "d0efff",
-                    "description": "Listen to the pitch, higher or lower pitch"
+                    "description": "Listen to several keystrokes, tell it's higher or lower"
                 }
             ]
         };
@@ -75,11 +86,9 @@
 
         document.getElementById("pageTitle").innerText = gameData.title;
 
-        const canvas = document.getElementById('circleCanvas');
-        const ctx = canvas.getContext('2d');
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const radius = gameData.radius;
+        const radius = Math.min(canvas.width, canvas.height) / 2;
 
         let isSpinning = false;
         let angle = 0;
