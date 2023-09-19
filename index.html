@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Spinning Circle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet"> <!-- Using Google Fonts for typography -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1 id="pageTitle"></h1>
+    <canvas id="circleCanvas" width="600" height="600"></canvas>
+    <div id="description"></div>
+    <audio id="turntableSound" src="turntable_sound.mp3" preload="auto"></audio>
+
+    <script>
+        const gameData = {
+            "title": "Music Game",
+            "radius": 300,
+            "data": [
+                {
+                    "id": 0,
+                    "name": "PitchGuess",
+                    "chance": 20,
+                    "color": "1167b1",
+                    "description": "Guess the pitch hit"
+                },
+                {
+                    "id": 1,
+                    "name": "Claps",
+                    "chance": 20,
+                    "color": "187bcd",
+                    "description": "Let's clap"
+                },
+                {
+                    "id": 2,
+                    "name": "SingAlong",
+                    "chance": 30,
+                    "color": "2a9df4",
+                    "description": "sing along with the melody"
+                },
+                {
+                    "id": 3,
+                    "name": "HigherLower",
+                    "chance": 30,
+                    "color": "d0efff",
+                    "description": "Listen to the pitch, higher or lower pitch"
+                }
+            ]
+        };
+
+        const turntableAudio = document.getElementById('turntableSound');
+
+        function playSound() {
+            turntableAudio.play();
+        }
+
+        function stopSound() {
+            turntableAudio.pause();
+            turntableAudio.currentTime = 0;  // This line resets the audio to the beginning
+        }
+
+        document.getElementById("pageTitle").innerText = gameData.title;
+
+        const canvas = document.getElementById('circleCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = gameData.radius;
+
+        let isSpinning = false;
+        let angle = 0;
+        let speed = 0.05;
+
+        let hoveredSector = null;
+
+        function drawArrow() {
+            const arrowLength = 50; 
+            const arrowHeadSize = 30;
+
+            const startX = centerX;
+            const startY = centerY - radius - arrowLength + arrowHeadSize;
+            const endX = centerX;
+            const endY = centerY - radius;
+
+            // Draw the main line of the arrow
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Draw the arrowhead
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - arrowHeadSize / 2, endY + arrowHeadSize);
+            ctx.lineTo(endX + arrowHeadSize / 2, endY + arrowHeadSize);
+            ctx.closePath();
+            ctx.fillStyle = "#3f704d";
+            ctx.fill();
+        }
+
+        function drawCircle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let startAngle = 0;
+            gameData.data.forEach(item => {
+                const segmentAngle = (2 * Math.PI) * (item.chance / 100);
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle + angle, startAngle + segmentAngle + angle);
+                ctx.closePath();
+                if (item.id === hoveredSector) {
+                    ctx.fillStyle = '#0000FF'; // Highlight color
+                } else
+                {
+                    ctx.fillStyle = '#' + item.color; // Random color for each segment
+                }
+                ctx.fill();
+                
+                startAngle += segmentAngle;
+            });
+
+            drawArrow();
+        }
+
+        function spinCircle() {
+            if (isSpinning) {
+                angle += speed;
+                drawCircle();
+                requestAnimationFrame(spinCircle);
+            } else {
+                speed = Math.max(0, speed - 0.001);
+                if (speed > 0) {
+                    angle += speed;
+                    drawCircle();
+                    requestAnimationFrame(spinCircle);
+                }
+            }
+        }
+
+        canvas.addEventListener('click', function() {
+            if (!isSpinning) {
+                isSpinning = true;
+                speed = 0.10;
+                spinCircle();
+                playSound();
+            } else {
+                isSpinning = false;
+                stopSound();
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            
+            const dx = mouseX - centerX;
+            const dy = mouseY - centerY;
+
+            const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+            const mouseAngle = Math.atan2(dy, dx) + Math.floor(angle / 2*Math.PI) * 2 * Math.PI - angle ; // adjusting for rotation
+
+            // If within the circle
+            if (distanceFromCenter <= radius) {
+                const sectorAngle = (2 * Math.PI) / 100;
+                let sectorChance = Math.abs(Math.floor((mouseAngle + 2 * Math.PI) % (2 * Math.PI) / sectorAngle));
+                console.log(sectorChance);
+                let currentChance = 0
+                let sectorId = 0
+                gameData.data.every(item => {
+                    sectorId = item.id;
+                    if (currentChance == sectorChance)
+                    {
+                        return false;
+                    } else if (currentChance > sectorChance)
+                    {
+                        sectorId = item.id - 1
+                        return false;
+                    } else 
+                    {
+                        currentChance += item.chance;
+                        return true;
+                    }
+                });
+                console.log(sectorId);
+                hoveredSector = sectorId;
+                document.getElementById('description').innerText = gameData.data[sectorId].name + "\n\n" + gameData.data[sectorId].description;
+            } else {
+                hoveredSector = null;
+                document.getElementById('description').innerText = "";
+            }
+
+            drawCircle();
+        });
+
+        canvas.addEventListener('mouseout', function() {
+            hoveredSector = null;
+            drawCircle();
+            document.getElementById('description').innerText = "";
+        });
+
+        drawCircle();
+    </script>
+</body>
+</html>
